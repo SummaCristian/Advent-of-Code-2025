@@ -49,8 +49,26 @@ struct Day01: AdventDay {
 
   /// Solves the second part of the problem
   func part2() -> Any {
-    print("Not implemented yet")
-    
+    // The Dial on which we will simulate the algorithm
+    var dial = Dial(
+      startsFrom: Self.initialValue,
+      target: Self.targetValue,
+      min: Self.minValue,
+      max: Self.maxValue,
+      countAllZeros: true
+    )
+
+    // Iterate the moves on the dial
+    for move in instructions {
+      switch move.0 {
+        case "R": dial.rotateRight(by: move.1)
+        case "L": dial.rotateLeft(by: move.1)
+        default: print("Invalid move: \(move.0)\(move.1)")
+      }
+    }
+
+    // Return how many times the target value was selected
+    return dial.timesTargetSelected
   }
 }
 
@@ -70,48 +88,62 @@ private struct Dial {
   /// The amount of times the target was selected
   var timesTargetSelected = 0
 
+  /// A flag specifying if the dial should count all 0s, even when they are only crossed
+  let countAllZeros: Bool
+
   init(
     startsFrom: Int = 0,
     target: Int = 0,
     min: Int = 0,
-    max: Int = 99
+    max: Int = 99,
+    countAllZeros: Bool = false
   ) {
     self.currentValue = startsFrom
     self.targetValue = target
     self.min = min
     self.max = max
+    self.countAllZeros = countAllZeros
   }
 
-  /// Rotates the dial to the RIGHT
   mutating func rotateRight(by amount: Int) {
-    let finalPos = currentValue + amount
+    let dialSize = max + 1
+    let start = currentValue
+    let end = currentValue + amount
 
-    if finalPos > max {
-      currentValue = (currentValue + amount) % (max + 1)
+    if countAllZeros {
+        // Count every time 0 is crossed
+        let crossings = (start + 1 ... end).reduce(0) { $0 + (($1 % dialSize == 0) ? 1 : 0) }
+        timesTargetSelected += crossings
     } else {
-      currentValue = finalPos
+        // Only count landing on 0
+        if end % dialSize == targetValue {
+            timesTargetSelected += 1
+        }
     }
 
-    // Check if the target is selected
-    if currentValue == targetValue {
-      timesTargetSelected += 1
-    }
-  }
+    currentValue = end % dialSize
+}
 
-  /// Rotates the dial to the LEFT
-  mutating func rotateLeft(by amount: Int) {
-    let finalPos = currentValue - amount
+mutating func rotateLeft(by amount: Int) {
+    let dialSize = max + 1
+    let start = currentValue
+    let end = currentValue - amount
 
-    if finalPos < min {
-      currentValue = (currentValue - amount + (max + 1)) % (max + 1)
-
+    if countAllZeros {
+        // Count every time 0 is crossed
+        let crossings = stride(from: start - 1, through: end, by: -1).reduce(0) {
+            $0 + (((($1 % dialSize) + dialSize) % dialSize == 0) ? 1 : 0)
+        }
+        timesTargetSelected += crossings
     } else {
-      currentValue = finalPos
+        // Only count landing on 0
+        if (end % dialSize + dialSize) % dialSize == targetValue {
+            timesTargetSelected += 1
+        }
     }
 
-    // Check if the target is selected
-    if currentValue == targetValue {
-      timesTargetSelected += 1
-    }
-  }
+    currentValue = (end % dialSize + dialSize) % dialSize
+}
+
+
 }
