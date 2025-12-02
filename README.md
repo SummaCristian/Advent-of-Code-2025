@@ -61,3 +61,8 @@ Each day brings new puzzles to solve, and I'm tracking my solutions here.
    ├─ ❌ Part 1
    └─ ❌ Part 2
 </pre>
+
+## Template
+
+This repository was bootstrapped using [Swift AoC Starter Example](https://github.com/swiftlang/swift-aoc-starter-example) by the original authors.  
+Big thanks for providing a great template to get started!
