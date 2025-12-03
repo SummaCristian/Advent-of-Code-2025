@@ -85,7 +85,7 @@ struct Day02: AdventDay {
     let initialValue = range.0
     let finalValue = range.1
 
-    // Only check valifd ranges and ones where the numbers have at least 2 digits
+    // Only check valid ranges and ones where the numbers have at least 2 digits
     if finalValue >= initialValue, String(finalValue).count > 1 {
         for id in initialValue...finalValue {
             let stringID = String(id)
