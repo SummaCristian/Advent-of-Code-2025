@@ -26,7 +26,7 @@ Each day brings new puzzles to solve, and I'm tracking my solutions here.
    └─ ⭐ Part 2
    │
 ❌ <b>Day 4</b>
-   ├─ ❌ Part 1
+   ├─ ⭐ Part 1
    └─ ❌ Part 2
    │
 ❌ <b>Day 5</b>
