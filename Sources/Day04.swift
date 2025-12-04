@@ -7,7 +7,7 @@ struct Day04: AdventDay {
     // --- Constants ---
     private static let rollChar = "@"
     private static let emptyChar = "."
-    private static let maxRollNeighbours = 4
+    private static let maxRollNeighbours = 3
 
     // Convert the data into a matrix of booleans, true = roll, false = empty
     var grid: [[Bool]] {
@@ -44,7 +44,37 @@ struct Day04: AdventDay {
 
     // Solves the second part of the problem
     func part2() -> Any {
-        return "Not implemented yet"
+        var grid = self.grid
+        var removedRolls = 0
+        
+        var modified = false
+        repeat {
+            modified = false
+            
+            for row in grid.enumerated() {
+            for column in row.element.enumerated() {
+                // Only check slots containing a roll
+                guard grid[row.offset][column.offset] else { continue }
+
+                let isSlotAccessible = isAccessible(
+                    at: (row: row.offset, column: column.offset),
+                    requiring: Day04.maxRollNeighbours,
+                    in: grid
+                )
+
+                // Remove the roll if it's accessible
+                if isSlotAccessible {
+                    grid[row.offset][column.offset] = false
+                    removedRolls += 1
+                    modified = true
+                }
+            }
+        }
+
+        } while modified
+
+        return removedRolls
+
     }
 
     /// Returns a Bool indicating whether the element in the 
@@ -73,7 +103,7 @@ struct Day04: AdventDay {
 
                 if rollGrid[neighbour.row][neighbour.column] {
                     rollNeighbours += 1
-                    if rollNeighbours >= maxRollNeighbours {
+                    if rollNeighbours > maxRollNeighbours {
                         return false
                     }
                 }
