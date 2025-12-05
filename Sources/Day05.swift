@@ -18,6 +18,9 @@ struct Day05: AdventDay {
     let start: Int
     /// The last value
     let end: Int
+
+    /// Returns the number of IDs included in the Range (inclusive)
+    var count: Int { end - start + 1 }
   }
 
   /// Converts the data into a struct containing
@@ -40,22 +43,41 @@ struct Day05: AdventDay {
     let ranges = String(parts[0])
     let ingredients = String(parts[1])
     // Convert ranges in an array of all possible IDs
-    let freshIDs: [Range] = ranges
-    .split(separator: "\n")
-    .compactMap { line -> Range? in
-        let parts = line
+    let freshIDs: [Range] = {
+      // Parse ranges
+      let parsed = ranges
+        .split(separator: "\n")
+        .compactMap { line -> Range? in
+          let parts = line
             .split(separator: "-")
             .compactMap { Int($0) }
 
-        guard parts.count == 2 else { return nil }
+            guard parts.count == 2 else { return nil }
 
-        let start = min(parts[0], parts[1])
-        let end   = max(parts[0], parts[1])
+            let start = min(parts[0], parts[1])
+            let end   = max(parts[0], parts[1])
 
-        return Range(start: start, end: end)
-    }
-    .sorted { $0.start < $1.start }
+            return Range(start: start, end: end)
+        }
+        .sorted { $0.start < $1.start }
 
+      // Merge overlapping or contiguous ranges
+      var merged: [Range] = []
+      for current in parsed {
+        if let last = merged.last, current.start <= last.end + 1 {
+          // Overlapping or contiguous → merge
+          merged[merged.count - 1] = Range(
+            start: last.start,
+            end: max(last.end, current.end)
+          )
+        } else {
+          // No overlap → append
+          merged.append(current)
+        }
+      }
+
+      return merged
+    }()
 
     // Convert ingredients in an array of all IDs
     let availableIDs = 
@@ -96,6 +118,10 @@ struct Day05: AdventDay {
 
   // Solves the second part of the problem
   func part2() -> Any {
-    return "Not implemented yet"
+    let inventory = self.inventory
+
+    return inventory.freshIDs
+      .map { $0.count }
+      .reduce(0, +)    
   }
 }
