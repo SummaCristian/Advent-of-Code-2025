@@ -8,6 +8,7 @@ struct Day06: AdventDay {
   static let sumSign = "+"
   static let productSign = "*"
 
+  // Returns a list of Problems using Part 1 rules
   private var problems: [Problem] {
     let rows = data.trimmingCharacters(in: .whitespacesAndNewlines)
       .split(separator: "\n")
@@ -40,6 +41,59 @@ struct Day06: AdventDay {
     return problems
   }
 
+  private var part2Problems: [Problem] {
+    let matrix = data
+      .split(separator: "\n", omittingEmptySubsequences: false)
+      .map { line in line.map { String($0) } }
+
+    // Find max number of columns among all rows
+    let maxColumns = matrix.map { $0.count }.max() ?? 0
+
+    // One column -> One Problem
+    var problems: [Problem] = Array(repeating: Problem(), count: maxColumns)
+    var currentIndex = 0
+
+    // Scan right to left
+    for col in stride(from: maxColumns-1, through: 0, by: -1)  {
+      var columnChars: [String] = []
+
+        // Scan top to bottom
+        for row in 0..<matrix.count {
+            guard col < matrix[row].count else { continue }
+            columnChars.append(matrix[row][col])
+        }
+
+        // Separator column → new Problem
+        if columnChars.allSatisfy({ $0 == " " }) {
+            if !problems[currentIndex].numbers.isEmpty {
+                problems.append(Problem())
+                currentIndex += 1
+            }
+            continue
+        }
+
+        // Fuse together the characters into a single String
+        let columnString = columnChars.joined()
+
+        // Remove spaces
+        let trimmed = columnString.trimmingCharacters(in: .whitespaces)
+
+        // Keep only number characters
+        let digits = trimmed.filter { $0.isNumber }
+
+        if !digits.isEmpty, let number = Int(digits) {
+            problems[currentIndex].numbers.append(number)
+        }
+
+        // Check for ProblemType
+        if let op = trimmed.first(where: { !$0.isNumber && $0 != " " }) {
+            problems[currentIndex].type = ProblemType.fromString(String(op)) ?? .sum
+        }
+    }
+
+    return problems
+  }
+
   // Solves the first part of the problem
   func part1() -> Any {
     return problems
@@ -49,12 +103,14 @@ struct Day06: AdventDay {
 
   // Solves the second part of the problem
   func part2() -> Any {
-    return "Not implemented yet"
+    return part2Problems
+      .map { $0.result }
+      .reduce(0, +)
   }
 }
 
 /// A struct representing a math problem
-private struct Problem {
+private struct Problem : Hashable {
   /// The list of numbers
   var numbers: [Int]
   /// The type of problem
