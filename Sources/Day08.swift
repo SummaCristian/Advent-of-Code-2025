@@ -24,29 +24,8 @@ struct Day08: AdventDay {
 
   // Solves the first part of the problem
 func part1() -> Any {
-
-    // --- Union-Find helpers ---
-
-    // Maps each JunctionBox to its parent in the disjoint-set
-    var parent: [JunctionBox: JunctionBox] = [:]
-
-    /// Finds the root of the set containing `box`, with path compression
-    func find(_ box: JunctionBox) -> JunctionBox {
-        if parent[box] == nil { parent[box] = box }
-        if parent[box]! != box { parent[box] = find(parent[box]!) }
-        return parent[box]!
-    }
-
-    /// Connects the sets containing boxes `a` and `b`
-    func union(_ a: JunctionBox, _ b: JunctionBox) {
-        let rootA = find(a)
-        let rootB = find(b)
-        if rootA != rootB {
-            parent[rootB] = rootA
-        }
-    }
-
     let boxes = junctionBoxes
+    var uf = UnionFind(boxes: boxes)
 
     // Generates all possible combinations of two boxes
     let combinations = boxes
@@ -61,13 +40,13 @@ func part1() -> Any {
     // Iterates over the first `pairsToFind` pairs
     // and unions their sets to form connected circuits
     for pair in sortedCombinations.prefix(Day08.pairsToFind) {
-        union(pair.first, pair.second)
+        uf.union(pair.first, pair.second)
     }
 
     /// Maps the root of each component to the number of boxes it contains
     var componentSizes: [JunctionBox: Int] = [:]
     for box in boxes {
-        let root = find(box)
+        let root = uf.find(box)
         componentSizes[root, default: 0] += 1
     }
 
@@ -79,9 +58,39 @@ func part1() -> Any {
 
   // Solves the second part of the problem
   func part2() -> Any {
-    return "Not implemented yet"
+      let boxes = junctionBoxes
+      var uf = UnionFind(boxes: boxes)
+
+      // Sort all pairs by squared distance, from shortest to longest
+      let sortedPairs = boxes
+        .combinations(ofCount: 2)
+        .map { pairArray -> (JunctionBox, JunctionBox, Int64) in
+          let a = pairArray[0]
+          let b = pairArray[1]
+          return (a, b, a.squaredDistance(from: b))
+        }
+        .sorted { $0.2 < $1.2 }
+
+      var lastPair: (JunctionBox, JunctionBox)? = nil
+
+      for (a, b, _) in sortedPairs {
+          if uf.find(a) != uf.find(b) {
+              uf.union(a, b)
+              lastPair = (a, b)
+          }
+
+          if uf.allConnected(boxes: boxes) {
+              break
+          }
+      }
+
+      guard let (lastA, lastB) = lastPair else {
+          fatalError("No pair caused full connection")
+      }
+
+      return lastA.x * lastB.x
+    }
   }
-}
 
 /// A struct modeling a Junction Box
 private struct JunctionBox: Equatable, Hashable {
@@ -124,4 +133,48 @@ private struct JunctionBoxPair: Equatable, Hashable {
 
   /// Returns the squaredDistance of the two Boxes in this Pair
   var squaredDistance: Int64 { first.squaredDistance(from: second) }
+}
+
+/// Utils struct to share common behavior between the two parts of the challenge
+private struct UnionFind {
+  private var parent: [JunctionBox: JunctionBox] = [:]
+
+  init(boxes: [JunctionBox]) {
+    for box in boxes {
+      parent[box] = box
+    }
+  }
+
+  /// Finds the root of the set containing `box` with path compression
+  mutating func find(_ box: JunctionBox) -> JunctionBox {
+    if parent[box]! != box {
+        parent[box] = find(parent[box]!)
+    }
+    return parent[box]!
+  }
+
+  /// Connects the sets containing `a` and `b`
+  mutating func union(_ a: JunctionBox, _ b: JunctionBox) {
+    let rootA = find(a)
+    let rootB = find(b)
+    if rootA != rootB {
+        parent[rootB] = rootA
+    }
+  }
+
+  /// Returns the sizes of all connected components
+  mutating func componentSizes(boxes: [JunctionBox]) -> [Int] {
+    var sizes: [JunctionBox: Int] = [:]
+    for box in boxes {
+        let root = find(box)
+        sizes[root, default: 0] += 1
+    }
+    return Array(sizes.values)
+  }
+
+  /// Returns true if all boxes belong to the same component
+  mutating func allConnected(boxes: [JunctionBox]) -> Bool {
+    let roots = Set(boxes.map { find($0) })
+    return roots.count == 1
+  }
 }
