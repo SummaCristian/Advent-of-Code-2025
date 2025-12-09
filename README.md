@@ -45,9 +45,9 @@ Each day brings new puzzles to solve, and I'm tracking my solutions here.
    ├─ ⭐ Part 1
    └─ ⭐ Part 2
    │
-❌ <b>Day 9</b>
+✅ <b>Day 9</b>
    ├─ ⭐ Part 1
-   └─ ❌ Part 2
+   └─ ⭐ Part 2
    │
 ❌ <b>Day 10</b>
    ├─ ❌ Part 1
