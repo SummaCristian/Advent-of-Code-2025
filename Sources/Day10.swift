@@ -164,46 +164,47 @@ struct Day10: AdventDay {
 
     /// Encodes the indicator values to make comparison faster (max 32 indicators)
     func encode(_ machine: Machine) -> Int {
-        var value = 0
-        for (i, indicator) in machine.indicators.enumerated() {
-            if indicator.isOn {
-                value |= (1 << i)
-            }
+      var value = 0
+      for (i, indicator) in machine.indicators.enumerated() {
+        if indicator.isOn {
+          value |= (1 << i)
         }
-        return value
+      }
+      
+      return value
     }
 
     // Performs the A* algorithm to find the best 'path'
     // towards the goal state. Path = Sequence of Button presses
     while !openSet.isEmpty {
-        // Pick state with lowest f = g + h
-        guard let current = openSet.popMin() else { break }
+      // Pick state with lowest f = g + h
+      guard let current = openSet.popMin() else { break }
 
-        let key = encode(current.machine)
+      let key = encode(current.machine)
 
-        // Since buttons can be pressed more than once,
-        // check if the configuration has already been
-        // visited, to avoid loops
-        if visited.contains(key) { continue }
-        // Add the configuration to the list of visited ones
-        visited.insert(key)
+      // Since buttons can be pressed more than once,
+      // check if the configuration has already been
+      // visited, to avoid loops
+      if visited.contains(key) { continue }
+      // Add the configuration to the list of visited ones
+      visited.insert(key)
 
-        // Check if we reached the goal state
-        if heuristic(current.machine, maxToggles: maxTogglesPerButton) == 0 { 
-            return current.path
-        }
+      // Check if we reached the goal state
+      if heuristic(current.machine, maxToggles: maxTogglesPerButton) == 0 { 
+        return current.path
+      }
 
-        // Expand successors
-        for idx in current.machine.buttons.indices {
-            var nextMachine = current.machine
-            nextMachine.press(buttonIdx: idx)
-            openSet.insert(State(
-                machine: nextMachine,
-                path: current.path + [idx],
-                cost: current.cost + 1,
-                maxToggles: maxTogglesPerButton
-            ))
-        }
+      // Expand successors
+      for idx in current.machine.buttons.indices {
+        var nextMachine = current.machine
+        nextMachine.press(buttonIdx: idx)
+        openSet.insert(State(
+          machine: nextMachine,
+          path: current.path + [idx],
+          cost: current.cost + 1,
+          maxToggles: maxTogglesPerButton
+        ))
+      }
     }
 
     // No path found
