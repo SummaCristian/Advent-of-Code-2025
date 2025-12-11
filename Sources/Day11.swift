@@ -5,8 +5,11 @@ struct Day11: AdventDay {
   var data: String
 
   // --- Constants ---
-  private static let initialMachineName = "you"
+  private static let initialMachineName1 = "you"
+  private static let initialMachineName2 = "svr"
   private static let finalMachineName = "out"
+  private static let dacMachineName = "dac"
+  private static let fourierMachineName = "fft"
 
   /// Converts the input String into a Dictionary of
   /// Nodes using the Machine's name as Key
@@ -39,22 +42,58 @@ struct Day11: AdventDay {
   func part1() -> Any {
     let machines = self.machines
 
-    guard let initialNode = machines[Day11.initialMachineName],
+    guard let initialNode = machines[Day11.initialMachineName1],
       let finalNode = machines[Day11.finalMachineName] else {
         fatalError("No initial or final Machines to be found in input")
       }
     
+    var memo: [String: Int] = [:]
+
     // Computes all paths from initialNode to finalNode
-    let paths = getAllPaths(from: initialNode, to: finalNode, in: machines)
+    let paths = getAllPathsCount(from: initialNode, to: finalNode, in: machines, memo: &memo)
 
     // Returns the number of paths
-    return paths.count
+    return paths
   }
 
   // Solves the second part of the problem
   func part2() -> Any {
-    return "Not implemented yet"
+    let machines = self.machines
+
+    guard let start = machines[Day11.initialMachineName2],
+      let dac = machines[Day11.dacMachineName],
+      let fft = machines[Day11.fourierMachineName],
+      let end = machines[Day11.finalMachineName] else {
+      fatalError("Required machines can't be found")
+    }
+    
+    // Paths where dac comes before fft
+    var memo1: [String: Int] = [:]
+    let pathsStartToDAC = getAllPathsCount(from: start, to: dac, in: machines, memo: &memo1)
+
+    var memo2: [String: Int] = [:]
+    let pathsDACtoFFT = getAllPathsCount(from: dac, to: fft, in: machines, memo: &memo2)
+
+    var memo3: [String: Int] = [:]
+    let pathsFFTtoEnd = getAllPathsCount(from: fft, to: end, in: machines, memo: &memo3)
+
+    // Paths where fft comes before dac
+    var memo4: [String: Int] = [:]
+    let pathsStartToFFT = getAllPathsCount(from: start, to: fft, in: machines, memo: &memo4)
+
+    var memo5: [String: Int] = [:]
+    let pathsFFTtoDAC = getAllPathsCount(from: fft, to: dac, in: machines, memo: &memo5)
+
+    var memo6: [String: Int] = [:]
+    let pathsDACtoEnd = getAllPathsCount(from: dac, to: end, in: machines, memo: &memo6)
+
+    // Total paths passing through both dac and fft
+    let totalPaths = (pathsStartToDAC * pathsDACtoFFT * pathsFFTtoEnd) +
+      (pathsStartToFFT * pathsFFTtoDAC * pathsDACtoEnd)
+
+    return totalPaths
   }
+
 
   /// Returns an Array of Nodes connected to the one passed as parameter
   private func getConnectedNotes(from node: Node, in dictionary: [String: Node]) -> [Node] {
@@ -69,33 +108,24 @@ struct Day11: AdventDay {
     return array
   }
 
-  /// Returns the list of paths that lead from a Node to another
-  private func getAllPaths(
-    from initialNode: Node,
+  /// Returns the number of paths that lead from a Node to another
+  private func getAllPathsCount(
+    from currentNode: Node,
     to finalNode: Node,
-    in dictionary: [String: Node]
-  ) -> [[Node]] {
-    var paths: [[Node]] = []
+    in dictionary: [String: Node],
+    memo: inout [String: Int]
+  ) -> Int {
+    if currentNode.name == finalNode.name { return 1 }
+    if let cached = memo[currentNode.name] { return cached }
 
-    func dfs(currentNode: Node, currentPath: [Node]) {
-      var currentPath = currentPath
-      currentPath.append(currentNode)
-
-      if currentNode.name == finalNode.name {
-        // Reached the end, save the path
-        paths.append(currentPath)
-        return
-      }
-
-      // Explore all connected nodes
-      for connectedName in currentNode.connections {
-        if let nextNode = dictionary[connectedName] {
-          dfs(currentNode: nextNode, currentPath: currentPath)
-        }
+    var paths = 0
+    for connectedName in currentNode.connections {
+      if let nextNode = dictionary[connectedName] {
+        paths += getAllPathsCount(from: nextNode, to: finalNode, in: dictionary, memo: &memo)
       }
     }
 
-    dfs(currentNode: initialNode, currentPath: [])
+    memo[currentNode.name] = paths
     return paths
   }
 
