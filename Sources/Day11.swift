@@ -60,40 +60,39 @@ struct Day11: AdventDay {
   func part2() -> Any {
     let machines = self.machines
 
+    // Grab costant nodes: Start and End
     guard let start = machines[Day11.initialMachineName2],
-      let dac = machines[Day11.dacMachineName],
-      let fft = machines[Day11.fourierMachineName],
       let end = machines[Day11.finalMachineName] else {
-      fatalError("Required machines can't be found")
+      fatalError("Start or end node not found")
     }
-    
-    // Paths where dac comes before fft
-    var memo1: [String: Int] = [:]
-    let pathsStartToDAC = getAllPathsCount(from: start, to: dac, in: machines, memo: &memo1)
 
-    var memo2: [String: Int] = [:]
-    let pathsDACtoFFT = getAllPathsCount(from: dac, to: fft, in: machines, memo: &memo2)
+    // Grab required intermediate nodes
+    let requiredNodes = [Day11.dacMachineName, Day11.fourierMachineName]
 
-    var memo3: [String: Int] = [:]
-    let pathsFFTtoEnd = getAllPathsCount(from: fft, to: end, in: machines, memo: &memo3)
+    // Compute all possible order permutations of the intermediate required nodes
+    let permutations = requiredNodes.permutations()
+    var totalPaths = 0
 
-    // Paths where fft comes before dac
-    var memo4: [String: Int] = [:]
-    let pathsStartToFFT = getAllPathsCount(from: start, to: fft, in: machines, memo: &memo4)
+    // Compute the number of paths going from start -> intermediate1 -> ... -> end
+    // for every permutation of the intermediate nodes
+    for perm in permutations {
+      let nodeSequence: [Node] = [start] + perm.compactMap { machines[$0] } + [end]
 
-    var memo5: [String: Int] = [:]
-    let pathsFFTtoDAC = getAllPathsCount(from: fft, to: dac, in: machines, memo: &memo5)
+      var pathsForPerm = 1
+      for i in 0..<(nodeSequence.count - 1) {
+        var memo: [String: Int] = [:]
+        pathsForPerm *= getAllPathsCount(from: nodeSequence[i],
+                                         to: nodeSequence[i+1],
+                                         in: machines,
+                                         memo: &memo)
+      }
 
-    var memo6: [String: Int] = [:]
-    let pathsDACtoEnd = getAllPathsCount(from: dac, to: end, in: machines, memo: &memo6)
+      totalPaths += pathsForPerm
+    }
 
-    // Total paths passing through both dac and fft
-    let totalPaths = (pathsStartToDAC * pathsDACtoFFT * pathsFFTtoEnd) +
-      (pathsStartToFFT * pathsFFTtoDAC * pathsDACtoEnd)
-
+    // Return the total number of paths from start -> end, passing through all intermediate nodes
     return totalPaths
   }
-
 
   /// Returns an Array of Nodes connected to the one passed as parameter
   private func getConnectedNotes(from node: Node, in dictionary: [String: Node]) -> [Node] {
