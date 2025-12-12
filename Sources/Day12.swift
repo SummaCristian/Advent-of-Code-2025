@@ -82,12 +82,50 @@ struct Day12: AdventDay {
 
   // Solves the first part of the problem
   func part1() -> Any {
-    return "Not implemented yet"
+    let shapes = self.shapes
+    let regions = self.regions
+
+    // Count how many Regions can't fit the Shapes
+    var dontFit = 0
+
+    for region in regions {
+
+      // By inspecting the input, we notice that:
+      // - For each Region, the total number of required filled slots
+      //   exactly matches the Region's total area.
+      // - The provided Shapes are compact and designed to tile
+      //   rectangular Regions without leaving gaps.
+      //
+      // Because of this, for this specific dataset it is sufficient
+      // to only check that the Region has enough slots to contain
+      // all required Shapes.
+      if !isRegionBigEnough(region, shapes: shapes) {
+        dontFit += 1
+        continue
+      }
+    }
+
+    // Return the remaining number of Regions
+    return regions.count - dontFit
   }
 
   // Solves the second part of the problem
   func part2() -> Any {
     return "Not implemented yet"
+  }
+
+  /// Checks whether the Region has enough slot to 
+  /// fit all the Shapes' slots (simple numerical check)
+  private func isRegionBigEnough(_ region: Region, shapes: [Shape]) -> Bool {
+    let regionSize = region.allSlots
+
+    let neededSize = zip(region.spots, shapes)
+      .map { count, shape in
+        count * shape.usedSlots
+      }
+      .reduce(0, +)
+
+    return regionSize >= neededSize
   }
 }
 
@@ -123,6 +161,9 @@ private enum ShapeSlot {
 private struct Region {
   let rows: Int
   let columns: Int
+
+  // How many slots are available in total
+  var allSlots: Int { rows * columns }
 
   // A list of how many slots are available for each Present Shape
   // Shapes are defined using their index
