@@ -7,7 +7,7 @@
 Welcome to my **Advent of Code 2025** solutions in **Swift**!  
 Each day brings new puzzles to solve, and I'm tracking my solutions here. 
 
-<div style="text-align: center">
+<div align="center">
 
    ![Swift](https://img.shields.io/badge/Language-Swift-orange?logo=swift)
 
