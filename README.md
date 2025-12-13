@@ -7,11 +7,17 @@
 Welcome to my **Advent of Code 2025** solutions in **Swift**!  
 Each day brings new puzzles to solve, and I'm tracking my solutions here. 
 
-![Swift](https://img.shields.io/badge/Language-Swift-orange?logo=swift)  
+<div style="text-align: center">
 
----
+   ![Swift](https://img.shields.io/badge/Language-Swift-orange?logo=swift)
 
-## Completed Days
+   ![Completed](https://img.shields.io/badge/Status-Completed-brightgreen)
+   ![⭐ 24 Stars](https://img.shields.io/badge/%E2%AD%90-24-yellow?style=flat)
+</div>
+
+## Calendar
+⭐ **Total stars**: 24 ⭐
+
 <pre>
 ✅ <b>Day 1</b>
    ├─ ⭐ Part 1
@@ -57,9 +63,9 @@ Each day brings new puzzles to solve, and I'm tracking my solutions here.
    ├─ ⭐ Part 1
    └─ ⭐ Part 2
    │
-⚠️ <b>Day 12</b>
+✅ <b>Day 12</b>
    ├─ ⭐ Part 1
-   └─ ❌ Part 2
+   └─ ⭐ Part 2
 </pre>
 
 ## Template
