@@ -98,7 +98,8 @@ struct Day10: AdventDay {
 
   // Solves the second part of the problem
   func part2() -> Any {
-    return "Not implemented yet"
+    let machines = self.machines
+    return machines.map { $0.minJoltagePresses() }.reduce(0, +)
   }
 
   /// Returns the minimum sequence of Buttons to press
@@ -243,6 +244,23 @@ private struct Machine {
   /// The list of Joltage Requirements
   let joltageRequirements: [Int]
 
+  /// Number of joltage dimensions
+  var dimension: Int {
+    joltageRequirements.count
+  }
+
+  /// Button coefficients as 0/1 vectors
+  var coeffs: [[Int]] {
+    let n = dimension
+    return buttons.map { button in
+      var v = Array(repeating: 0, count: n)
+      for i in button.indicatorIndices {
+        v[i] = 1
+      }
+      return v
+    }
+  }
+
   /// True if all Indicators match their state in the goalIndicators
   var isCorrect: Bool {
     guard indicators.count == goalIndicators.count else { fatalError("Number of indicators doesn't match") }
@@ -278,5 +296,155 @@ private struct Machine {
 
       indicators[idx].toggle()
     }
+  }
+}
+
+/// Functions for part 2
+extension Machine {
+
+  /// Builds all reachable press-patterns grouped by parity.
+  ///
+  /// Each pattern represents the total number of times each joltage
+  /// dimension is affected by pressing a subset of buttons once.
+  ///
+  /// Structure:
+  ///   parity -> pattern -> minimal cost
+  ///
+  /// where:
+  /// - parity  : vector of 0/1 (pattern mod 2)
+  /// - pattern : vector of non-negative Ints
+  /// - cost    : number of button presses used to generate the pattern
+  ///
+  /// This table is later used to reduce the goal vector by one parity
+  /// layer at a time in `minJoltagePresses()`.
+  func buildPatterns() -> [[Int] : [[Int] : Int]] {
+    /// Button coefficients
+    let coeffs = self.coeffs
+    /// Number of buttons
+    let m = coeffs.count
+    /// Joltage dimensions
+    let n = dimension
+
+    var out: [[Int] : [[Int] : Int]] = [:]
+
+    /// Generate all possible parity vectors of length n (2^n total)
+    func allParity(_ idx: Int, _ cur: inout [Int]) {
+      if idx == n {
+        // Initialize an empty pattern map for this parity
+        out[cur] = [:]
+        return
+      }
+
+      // Each dimension can be either even (0) or odd (1)
+      for b in 0...1 {
+        cur[idx] = b
+        allParity(idx + 1, &cur)
+      }
+    }
+
+    var p = Array(repeating: 0, count: n)
+    allParity(0, &p)
+
+    // Enumerate all subsets of buttons (2^m)
+    // Each subset generates exactly one pattern
+    let total = 1 << m
+    for mask in 0..<total {
+      var pattern = Array(repeating: 0, count: n)
+      var cost = 0
+
+      // Accumulate coefficients of the selected buttons
+      for i in 0..<m where (mask & (1 << i)) != 0 {
+        cost += 1
+        let c = coeffs[i]
+        for j in 0..<n {
+          pattern[j] += c[j]
+        }
+      }
+
+      // Parity is pattern mod 2
+      let parity = pattern.map { $0 & 1 }
+
+      // Keep only the cheapest way to reach the same pattern
+      if let old = out[parity]?[pattern] {
+        if cost < old {
+          out[parity]![pattern] = cost
+        }
+      } else {
+        out[parity]![pattern] = cost
+      }
+    }
+
+    return out
+  }
+
+  /// Computes the minimum number of button presses needed to satisfy
+  /// the joltage requirements.
+  ///
+  /// This uses a divide-by-2 recursive strategy:
+  /// - At each step, match the parity of the goal using precomputed patterns
+  /// - Subtract the pattern
+  /// - Divide the remaining vector by 2
+  ///
+  /// The recurrence is:
+  ///   cost(goal) = min(cost(pattern) + 2 * cost((goal - pattern) / 2))
+  ///
+  /// Memoization ensures the total complexity is manageable.
+  func minJoltagePresses() -> Int {
+    let goal = joltageRequirements
+    let patterns = buildPatterns()
+
+    // Memoization: goal vector -> minimal cost
+    var memo: [[Int] : Int] = [:]
+
+    /// Recursively solves the reduced goal vector
+    func solve(_ goal: [Int]) -> Int {
+      // Base case: nothing left to satisfy
+      if goal.allSatisfy({ $0 == 0 }) {
+        return 0
+      }
+
+      // Return cached result if available
+      if let v = memo[goal] {
+        return v
+      }
+
+      // Only patterns with matching parity are admissible
+      let parity = goal.map { $0 & 1 }
+      var best = Int.max
+
+      guard let bucket = patterns[parity] else {
+        return Int.max
+      }
+
+      // Try all patterns with the correct parity
+      for (pattern, cost) in bucket {
+        var ok = true
+        var next = Array(repeating: 0, count: goal.count)
+
+        // Check if the pattern can be subtracted
+        for i in 0..<goal.count {
+          if pattern[i] > goal[i] {
+            ok = false
+            break
+          }
+
+          // After removing the pattern, divide by 2
+          next[i] = (goal[i] - pattern[i]) >> 1
+        }
+
+        if !ok { continue }
+
+        let sub = solve(next)
+        if sub != Int.max {
+          // Each recursive level represents two presses
+          best = min(best, cost + 2 * sub)
+        }
+      }
+
+      memo[goal] = best
+      return best
+    }
+
+    return solve(goal)
   }
 }
